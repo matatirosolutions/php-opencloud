@@ -55,11 +55,11 @@ class Endpoint
     {
         $endpoint = new self();
 
-        if (isset($object->publicURL)) {
-            $endpoint->setPublicUrl($endpoint->getVersionedUrl($object->publicURL, $supportedServiceVersion, $client));
+        if (isset($object->url)) {
+            $endpoint->setPublicUrl($endpoint->getVersionedUrl($object->url, $supportedServiceVersion, $client));
         }
-        if (isset($object->internalURL)) {
-            $endpoint->setPrivateUrl($endpoint->getVersionedUrl($object->internalURL, $supportedServiceVersion, $client));
+        if (isset($object->url)) {
+            $endpoint->setPrivateUrl($endpoint->getVersionedUrl($object->url, $supportedServiceVersion, $client));
         }
         if (isset($object->region)) {
             $endpoint->setRegion($object->region);

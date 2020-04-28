@@ -1,5 +1,7 @@
 # php-opencloud
 
+**This fork has been modified to work with the OVH Keystone v3 auth endpoint.**
+
 > **OpenStack users are recommended to use https://github.com/php-opencloud/openstack, which
 > is the latest supported version of the SDK for OpenStack.**
 

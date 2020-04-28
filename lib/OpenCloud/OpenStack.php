@@ -317,17 +317,41 @@ class OpenStack extends Client
     public function getCredentials()
     {
         if (!empty($this->secret['username']) && !empty($this->secret['password'])) {
-            $credentials = array('auth' => array(
-                'passwordCredentials' => array(
-                    'username' => $this->secret['username'],
-                    'password' => $this->secret['password']
-                )
-            ));
+            $credentials = ['auth' => [
+                'identity' => [
+                    'methods' => [
+                        'password'
+                    ],
+                    'password' => [
+                        'user' => [
+                            'domain' => [
+                                'id' => 'default'
+                            ],
+                            'name' => $this->secret['username'],
+                            'password' => $this->secret['password'],
+                        ]
+                    ]
+                ],
+            ]];
 
             if (!empty($this->secret['tenantName'])) {
-                $credentials['auth']['tenantName'] = $this->secret['tenantName'];
+                $credentials['auth']['scope'] = [
+                    'project' => [
+                        'domain' => [
+                            'id' => 'default',
+                        ],
+                        'name' => $this->secret['tenantName'],
+                    ]
+                ];
             } elseif (!empty($this->secret['tenantId'])) {
-                $credentials['auth']['tenantId'] = $this->secret['tenantId'];
+                $credentials['auth']['scope'] = [
+                    'project' => [
+                        'domain' => [
+                            'id' => 'default',
+                        ],
+                        'id' => $this->secret['tenantId'],
+                    ]
+                ];
             }
 
             return json_encode($credentials);
@@ -391,14 +415,27 @@ class OpenStack extends Client
         $response = $identity->generateToken($this->getCredentials());
 
         $body = Formatter::decode($response);
+        $this->setCatalog($body->token->catalog);
 
-        $this->setCatalog($body->access->serviceCatalog);
-        $this->setTokenObject($identity->resource('Token', $body->access->token));
-        $this->setUser($identity->resource('User', $body->access->user));
+        $tokenData = [
+            'id' => $response->getHeader('x-subject-token'),
+            'expires' => $body->token->expires_at
+        ];
+        $this->setTokenObject($identity->resource('Token', $tokenData));
 
-        if (isset($body->access->token->tenant)) {
-            $this->setTenantObject($identity->resource('Tenant', $body->access->token->tenant));
-        }
+        $userData = [
+            'id' => $body->token->user->id,
+            'username' => $body->token->user->name
+        ];
+        $this->setUser($identity->resource('User', $userData));
+
+        $tenantData = [
+            'descripton' => 'Omni SMS',
+            'enabled' => true,
+            'id' => $body->token->project->id,
+            'name' => $body->token->project->name
+        ];
+        $this->setTenantObject($identity->resource('Tenant', $tenantData));
 
         // Set X-Auth-Token HTTP request header
         $this->updateTokenHeader($this->getToken());
